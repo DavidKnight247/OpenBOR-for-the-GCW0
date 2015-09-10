@@ -312,9 +312,9 @@ case $1 in
 #                                                                          #
 ############################################################################
 8)
-   if test -e "/opt/opendingux-toolchain"; then
-     export OPENDINGUX_TOOLCHAIN=/opt/opendingux-toolchain
-     export OPENDINGUX_TOOLCHAIN_PREFIX=$OPENDINGUX_TOOLCHAIN/usr
+   if test -e "/opt/gcw0-toolchain"; then
+     export OPENDINGUX_TOOLCHAIN=/opt/gcw0-toolchain
+     export OPENDINGUX_TOOLCHAIN_PREFIX=$OPENDINGUX_TOOLCHAIN/usr/mipsel-gcw0-linux-uclibc/sysroot/usr
      export PATH=$PATH:$OPENDINGUX_TOOLCHAIN/usr/bin
    fi
    if test $OPENDINGUX_TOOLCHAIN; then

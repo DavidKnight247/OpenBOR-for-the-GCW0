@@ -202,18 +202,21 @@ endif
 
 ifdef BUILD_OPENDINGUX
 TARGET 	        = $(VERSION_NAME).elf
-TARGET_FINAL    = $(VERSION_NAME).dge
+TARGET_FINAL    = $(VERSION_NAME)
 TARGET_PLATFORM = OPENDINGUX
 BUILD_SDL       = 1
 BUILD_GFX       = 1
 BUILD_PTHREAD   = 1
 BUILD_SDL_IO    = 1
-BUILD_TREMOR    = 1
+BUILD_VORBIS    = 1
+# BUILD_WEBM      = 1 #added
 BUILDING        = 1
-CC              = $(OPENDINGUX_TOOLCHAIN_PREFIX)/bin/mipsel-linux-gcc
+
+CC              = $(OPENDINGUX_TOOLCHAIN)/usr/bin/mipsel-linux-gcc
 INCLUDES        = $(OPENDINGUX_TOOLCHAIN_PREFIX)/include \
-                  $(OPENDINGUX_TOOLCHAIN_PREFIX)/include/SDL
-LIBRARIES       = $(OPENDINGUX_TOOLCHAIN_PREFIX)/lib
+                  $(OPENDINGUX_TOOLCHAIN_PREFIX)/include/SDL2 ./source/webmlib/
+LIBRARIES       = $(OPENDINGUX_TOOLCHAIN_PREFIX)/lib 
+# BUILD_DEBUG = 1
 ifeq ($(BUILD_OPENDINGUX), 0)
 BUILD_DEBUG     = 1
 endif
@@ -276,7 +279,8 @@ ifdef BUILD_WIZ
 STRIP 	        = $(WIZDEV)/$(PREFIX)strip$(EXTENSION) $(TARGET) -o $(TARGET_FINAL)
 endif
 ifdef BUILD_OPENDINGUX
-STRIP           = $(OPENDINGUX_TOOLCHAIN_PREFIX)/bin/mipsel-linux-strip $(TARGET) -o $(TARGET_FINAL)
+# STRIP           = $(OPENDINGUX_TOOLCHAIN_PREFIX)/bin/mipsel-linux-strip $(TARGET) -o $(TARGET_FINAL)
+STRIP           = mipsel-linux-strip $(TARGET) -o $(TARGET_FINAL)
 endif
 ifdef BUILD_WII
 STRIP           = elf2dol $< $@
@@ -528,7 +532,7 @@ OBJS            = $(MAIN)                                                       
 #----------------------------------------------------------------------------------------------------
 
 CFLAGS 	       += $(addprefix -I", $(addsuffix ", $(INCS))) $(ARCHFLAGS) -D$(TARGET_PLATFORM)
-CFLAGS 	       += -g -Wall -Werror -fsigned-char
+CFLAGS 	       += -g -Wall -fsigned-char
 
 ifndef BUILD_GP2X
 ifndef BUILD_DARWIN
@@ -590,7 +594,9 @@ endif
 
 
 ifdef BUILD_OPENDINGUX
-CFLAGS 	       += -D_REENTRANT -DOPENDINGUX -O2 -fomit-frame-pointer -ffunction-sections -ffast-math -fsingle-precision-constant -G0 -mbranch-likely
+CFLAGS 	       += -DSDL2 -DGCW0 -D_REENTRANT -DOPENDINGUX -O3 -ffunction-sections -ffast-math -funroll-loops
+# CFLAGS 	       += -DSDL2 -DGCW0 -D_REENTRANT -DOPENDINGUX 
+LDFLAGS += -L/home/david/Projects/openbor/engine/engine
 endif
 
 
@@ -661,11 +667,11 @@ endif
 
 
 ifdef BUILD_SDL
-ifeq ($(findstring DGE, $(SDKPATH)), DGE)
-LIBS           += -lSDL -lSDL_gfx -lts
-else
+# ifeq ($(findstring DGE, $(SDKPATH)), DGE)
+# LIBS           += -lSDL -lSDL_gfx -lts
+# else
 LIBS           += -Wl,-rpath,$(LIBRARIES) -lSDL2 -lSDL2_gfx
-endif
+# endif
 endif
 
 

@@ -8897,14 +8897,21 @@ HRESULT openbor_changeplayerproperty(ScriptVariant **varlist , ScriptVariant **p
     }
     default:
         printf("Invalid property name for function changeplayerproperty.\n");
+#ifdef GCW0 //ignore error for now TESTING
+#else
         return E_FAIL;
+#endif
     }
 
     return S_OK;
 cpperror:
     ScriptVariant_ToString(arg, buffer);
     printf("Function changeplayerproperty receives an invalid value: %s.\n", buffer);
+#ifdef GCW0 //ignore error for now TESTING
+    return S_OK;
+#else
     return E_FAIL;
+#endif
 }
 
 //checkhole(x,z), return 1 if there's hole here
@@ -10632,6 +10639,9 @@ int mapstrings_transconst(ScriptVariant **varlist, int paramCount)
         ICMPCONST(AIMOVE1_ARROW)
         ICMPCONST(AIMOVE1_BOMB)
         ICMPCONST(AIMOVE2_NORMAL)
+#ifdef GCW0
+        ICMPCONST(AIMOVE2_AVOID)
+#endif
         ICMPCONST(AIMOVE2_IGNOREHOLES)
         ICMPCONST(AIATTACK1_NORMAL)
         ICMPCONST(AIATTACK1_LONG)
@@ -10654,7 +10664,12 @@ int mapstrings_transconst(ScriptVariant **varlist, int paramCount)
         ICMPCONST(CONTACT_DIST_V)
         ICMPCONST(GRAB_DIST)
         ICMPCONST(GRAB_STALL)
+#ifdef GCW0
         ICMPCONST(ATK_NORMAL)
+        ICMPCONST(ATK_ATTACK1)
+#else
+        ICMPCONST(ATK_NORMAL)
+#endif
         ICMPCONST(ATK_NORMAL2)
         ICMPCONST(ATK_NORMAL3)
         ICMPCONST(ATK_NORMAL4)

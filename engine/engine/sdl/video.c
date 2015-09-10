@@ -191,7 +191,9 @@ int video_set_mode(s_videomodes videomodes)
 	SDL_ShowCursor(SDL_DISABLE);
 	SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
 	video_stretch(savedata.stretch);
-
+#ifdef GCW0
+SDL_RenderSetScale(renderer, 0.5, 0.5);
+#endif
 	return 1;
 }
 
@@ -254,7 +256,11 @@ void video_stretch(int enable)
 		else
 			SDL_RenderSetLogicalSize(renderer, stored_videomodes.hRes, stored_videomodes.vRes);
 	}
+#ifdef GCW0 //testing
+//	SDL_RenderSetLogicalSize(renderer, 320, 240);
+#endif
 }
+
 
 void video_set_color_correction(int gm, int br)
 {

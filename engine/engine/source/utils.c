@@ -20,6 +20,10 @@
 #include "openbor.h"
 #include "packfile.h"
 
+#ifdef GCW0
+#include "menu.h"
+#endif
+
 #ifndef DC
 #include <dirent.h>
 #endif
@@ -67,6 +71,13 @@
 #define READ_LOGFILE(type)   type ? fopen("/mnt/sdcard/OpenBOR/Logs/OpenBorLog.txt", "rt") : fopen("/mnt/sdcard/OpenBOR/Logs/ScriptLog.txt", "rt")
 #define COPY_ROOT_PATH(buf, name) strncpy(buf, "/mnt/sdcard/OpenBOR/", 20); strncat(buf, name, strlen(name)); strncat(buf, "/", 1);
 #define COPY_PAKS_PATH(buf, name) strncpy(buf, "/mnt/sdcard/OpenBOR/Paks/", 25); strncat(buf, name, strlen(name));
+#elif GCW0
+#define CHECK_LOGFILE(type)  type ? fileExists("/usr/local/home/.OpenBOR/Logs/OpenBorLog.txt") : fileExists("/usr/local/home/.OpenBOR/Logs/ScriptLog.txt")
+#define OPEN_LOGFILE(type)   type ? fopen("/usr/local/home/.OpenBOR/Logs/OpenBorLog.txt", "wt") : fopen("/usr/local/home/.OpenBOR/Logs/ScriptLog.txt", "wt")
+#define APPEND_LOGFILE(type) type ? fopen("/usr/local/home/.OpenBOR/Logs/OpenBorLog.txt", "at") : fopen("/usr/local/home/.OpenBOR/Logs/ScriptLog.txt", "at")
+#define READ_LOGFILE(type)   type ? fopen("/usr/local/home/.OpenBOR/Logs/OpenBorLog.txt", "rt") : fopen("/usr/local/home/.OpenBOR/Logs/ScriptLog.txt", "rt")
+#define COPY_ROOT_PATH(buf, name) strncpy(buf, "/usr/local/home/.OpenBOR/", 25); strncat(buf, name, strlen(name)); strncat(buf, "/", 1);
+#define COPY_PAKS_PATH(buf, name) strncpy(buf, "/usr/local/share/OpenBOR/Paks/", 30); strncat(buf, name, strlen(name));
 #else
 #define CHECK_LOGFILE(type)  type ? fileExists("./Logs/OpenBorLog.txt") : fileExists("./Logs/ScriptLog.txt")
 #define OPEN_LOGFILE(type)   type ? fopen("./Logs/OpenBorLog.txt", "wt") : fopen("./Logs/ScriptLog.txt", "wt")
@@ -136,6 +147,11 @@ void getBasePath(char *newName, char *name, int type)
         break;
     case 1:
         COPY_PAKS_PATH(buf, name);
+#ifdef GCW0
+        break;
+    case 2:
+        strcpy(buf, sdcard_dir); strcat(buf, "/"); strcat(buf, name);
+#endif
         break;
     }
     memcpy(newName, buf, sizeof(buf));
@@ -161,7 +177,13 @@ int dirExists(char *dname, int create)
     }
     if(create)
     {
+#ifdef GCW0
+        char command[256] = {"mkdir -p "};
+        strcat(command, realName);
+        fd2 = system(command);
+#else
         fd2 = MKDIR(realName);
+#endif
         if(fd2 < 0)
         {
             return 0;

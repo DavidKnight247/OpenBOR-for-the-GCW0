@@ -5,6 +5,10 @@
  *
  * Copyright (c) 2004 - 2014 OpenBOR Team
  */
+#ifdef GCW0
+#include "gcw0.h"
+#endif
+
 #include <unistd.h>
 #include "SDL.h"
 #include "sdlport.h"
@@ -170,24 +174,36 @@ void sortList()
 	}
 }
 
+#ifdef GCW0
+char sdcard_dir[128];
+int use_sdcard = 0;
+#endif
 int findPaks(void)
 {
-	int i = 0;
-	DIR* dp = NULL;
-	struct dirent* ds;
-	dp = opendir(paksDir);
-	if(dp != NULL)
-   	{
-		while((ds = readdir(dp)) != NULL)
-		{
-			if(packfile_supported(ds))
-			{
-				fileliststruct *copy = NULL;
-				if(filelist == NULL) filelist = malloc(sizeof(fileliststruct));
-				else
-				{
-					copy = malloc(i * sizeof(fileliststruct));
-					memcpy(copy, filelist, i * sizeof(fileliststruct));
+        int i = 0;
+        DIR* dp = NULL;
+        struct dirent* ds;
+#ifdef WII
+        dp = opendir("sd:/apps/OpenBOR/Paks");
+#elif GCW0
+        dp = opendir("/usr/local/share/OpenBOR/Paks");
+
+#else
+        dp = opendir(paksDir);
+#endif
+        if(dp != NULL)
+        {
+                while((ds = readdir(dp)) != NULL)
+                {
+                        if(packfile_supported(ds))
+                        {
+                                fileliststruct *copy = NULL;
+                                if(filelist == NULL) filelist = malloc(sizeof(fileliststruct));
+                                else
+                                {
+                                        copy = malloc(i * sizeof(fileliststruct));
+                                        memcpy(copy, filelist, i * sizeof(fileliststruct));
+
 					free(filelist);
 					filelist = malloc((i + 1) * sizeof(fileliststruct));
 					memcpy(filelist, copy, i * sizeof(fileliststruct));
@@ -200,6 +216,64 @@ int findPaks(void)
 		}
 		closedir(dp);
    	}
+#ifdef GCW0
+/*add SDCard support*/
+//find the correct name of SD Card
+        DIR *mysd;
+        struct dirent *myds;
+        strcpy(sdcard_dir, "/media/");
+        mysd = opendir("/media/");
+        if (mysd != NULL) //ignore the entrires which are unrelated to the sdcard (TODO GCW0 only has 1 SDCard slot, but this will break if eg two devices are used eg USB and SDCard.
+        {
+                char testdir1[50];
+                char testdir2[50];
+                char testdir3[50];
+                char testdir4[50];
+                strcpy(testdir1, ".");
+                strcpy(testdir2, "..");
+                strcpy(testdir3, "data");
+                strcpy(testdir4, "home");
+                while((myds = readdir(mysd)) != NULL)
+                {
+                        char myd_name[50];
+                        strcpy(myd_name, myds->d_name);
+                        if(strcmp(myd_name, testdir1) && strcmp(myd_name, testdir2) && strcmp(myd_name, testdir3) && strcmp(myd_name, testdir4))
+                        {
+                                strcat(sdcard_dir, myds->d_name);
+                                strcat(sdcard_dir, "/OpenBOR/Paks");
+                        }
+                }
+        }
+        closedir(mysd);
+
+        DIR *mydp;
+        mydp = opendir(sdcard_dir);
+        if(mydp != NULL)
+        {
+                while((myds = readdir(mydp)) != NULL)
+                {
+                        if(packfile_supported(myds))
+                        {
+                                fileliststruct *copy = NULL;
+                                if(filelist == NULL) filelist = malloc(sizeof(fileliststruct));
+                                else
+                                {
+                                        copy = malloc(i * sizeof(fileliststruct));
+                                        memcpy(copy, filelist, i * sizeof(fileliststruct));
+                                        free(filelist);
+                                        filelist = malloc((i + 1) * sizeof(fileliststruct));
+                                        memcpy(filelist, copy, i * sizeof(fileliststruct));
+                                        free(copy); copy = NULL;
+                                }
+                                memset(&filelist[i], 0, sizeof(fileliststruct));
+                                strncpy(filelist[i].filename, myds->d_name, strlen(myds->d_name));
+                                i++;
+                        }
+                }
+        }
+        closedir(mydp);
+#endif
+
 	return i;
 }
 
@@ -271,6 +345,17 @@ s_screen *getPreview(char *filename)
 	s_screen *scale = NULL;
 	// Grab current path and filename
 	getBasePath(packfile, filename, 1);
+#ifdef GCW0
+        char packfile2[128];
+        strcpy (packfile2, packfile);
+        // Create & Load & Scale Image
+        if(!loadscreen("data/bgs/title", packfile, NULL, PIXEL_x8, &title))
+        {
+		use_sdcard = 1;
+                getBasePath(packfile2, filename, 2);
+                strcpy(packfile, packfile2);
+        } else  use_sdcard = 0;
+#endif
 	// Create & Load & Scale Image
 	if(!loadscreen("data/bgs/title", packfile, NULL, PIXEL_x8, &title)) return NULL;
 	scale = allocscreen(160, 120, PIXEL_x8);
@@ -298,8 +383,13 @@ void PlayBGM()
 	bgmPlay = packfile_music_play(filelist, bgmFile, bgmLoop, dListCurrentPosition, dListScrollPosition);
 }
 
+
 int ControlMenu()
 {
+#ifdef GCW0
+	static int gcw_left;
+	static int gcw_right;
+#endif
 	int status = -1;
 	int dListMaxDisplay = 17;
 	bothnewkeys = 0;
@@ -307,54 +397,141 @@ int ControlMenu()
 	switch(bothnewkeys)
 	{
 		case FLAG_MOVEUP:
+#ifdef GCW0
+			gcw_left = gcw_right = 0;
+#endif
 			dListScrollPosition--;
 			if(dListScrollPosition < 0)
 			{
 				dListScrollPosition = 0;
 				dListCurrentPosition--;
 			}
+#ifdef GCW0 //wrap to bottom of list
+			if(dListCurrentPosition < 0) 
+			{
+				dListScrollPosition = dListTotal - dListMaxDisplay - 1;
+				dListCurrentPosition = dListMaxDisplay;
+			}
+#else
 			if(dListCurrentPosition < 0) dListCurrentPosition = 0;
+#endif
 			break;
 
 		case FLAG_MOVEDOWN:
+#ifdef GCW0
+			gcw_left = gcw_right = 0;
+#endif
 			dListCurrentPosition++;
 			if(dListCurrentPosition > dListTotal - 1) dListCurrentPosition = dListTotal - 1;
 			if(dListCurrentPosition > dListMaxDisplay)
-	        {
-		        if((dListCurrentPosition+dListScrollPosition) < dListTotal) dListScrollPosition++;
-			    dListCurrentPosition = dListMaxDisplay;
+		        {
+			        if((dListCurrentPosition+dListScrollPosition) < dListTotal) dListScrollPosition++;
+#ifdef GCW0 //wrap to top of list
+				else 	dListScrollPosition = dListCurrentPosition = 0;
+				if(dListCurrentPosition)	dListCurrentPosition = dListMaxDisplay;
+#else
+				dListCurrentPosition = dListMaxDisplay;
+#endif
 			}
 			break;
+#ifdef GCW0
+		case FLAG_ATTACK3: //GCW0 R, move down one screen
+			gcw_left = gcw_right = 0;
+			if(dListScrollPosition >= dListTotal - dListMaxDisplay - 1)	dListCurrentPosition = dListMaxDisplay;
+			dListScrollPosition += 17;
+			if(dListScrollPosition > dListTotal - 18) 			dListScrollPosition = dListTotal - 18;
+			break;
+		case FLAG_ATTACK4: //GCW0 L, move up one screen
+			gcw_left = gcw_right = 0;
+			if(!dListScrollPosition) 	dListCurrentPosition = 0;
+			dListScrollPosition -= 17;
+			if(dListScrollPosition < 0)	dListScrollPosition = 0;
+			break;
+#endif
 
+#ifdef GCW0
+		case FLAG_MOVELEFT:
+			gcw_left = 1;
+			gcw_right = 0;
+			break;
+
+		case FLAG_MOVERIGHT:
+			gcw_right = 1;
+			gcw_left = 0;
+			break;
+#else
 		case FLAG_MOVELEFT:
 			break;
 
 		case FLAG_MOVERIGHT:
 			break;
-
+#endif
 		case FLAG_START:
 		case FLAG_ATTACK:
+#ifdef GCW0
+			gcw_left = gcw_right = 0;
+#endif
 			// Start Engine!
 			status = 1;
 			break;
 
 		case FLAG_ATTACK2:
+#ifdef GCW0
+			gcw_left = gcw_right = 0;
+#endif
 			pControl = ControlBGM;
-			status = -2;
+			status   = -2;
 			break;
-
 		case FLAG_SPECIAL:
 		case FLAG_ESC:
+#ifdef GCW0
+			gcw_left = gcw_right = 0;
+#endif
 			// Exit Engine!
 			status = 2;
 			break;
 
 		case FLAG_JUMP:
+#ifdef GCW0
+			gcw_left = gcw_right = 0;
+#endif
 			//drawLogs();
 			status = 3;
 			break;
 
 		default:
+#ifdef GCW0
+			if(gcw_keyheld && gcw_left)
+			{
+				dListScrollPosition--;
+				if(dListScrollPosition < 0)
+				{
+					dListScrollPosition = 0;
+					dListCurrentPosition--;
+				}
+				if(dListCurrentPosition < 0) 
+				{
+					dListScrollPosition  = dListTotal - dListMaxDisplay - 1;
+					dListCurrentPosition = dListMaxDisplay;
+				}
+				gcw_pause = 0;
+				break;
+			}
+			else if (gcw_keyheld && gcw_right)
+			{
+				dListCurrentPosition++;
+				if(dListCurrentPosition > dListTotal - 1) dListCurrentPosition = dListTotal - 1;
+				if(dListCurrentPosition > dListMaxDisplay)
+		        	{
+			        	if((dListCurrentPosition+dListScrollPosition) < dListTotal) dListScrollPosition++;
+					else 				dListScrollPosition  = dListCurrentPosition = 0;
+					if(dListCurrentPosition)	dListCurrentPosition = dListMaxDisplay;
+					gcw_pause = 0;
+				}
+				break;
+			}
+			else
+#endif
 			// No Update Needed!
 			status = 0;
 			break;
@@ -699,7 +876,11 @@ void Menu()
 	loadsettings();
 	drawLogo();
 	dListCurrentPosition = 0;
-	if((dListTotal = findPaks()) != 1)
+#ifdef GCW0
+        if((dListTotal = findPaks()) != 1)
+#else
+        if((dListTotal = findPaks()) != 1)
+#endif
 	{
 		sortList();
 		getAllLogs();
@@ -757,7 +938,14 @@ void Menu()
 			borExit(0);
 		}
 	}
+#ifdef GCW0
+        if (!use_sdcard)
+                getBasePath(packfile, filelist[dListCurrentPosition+dListScrollPosition].filename, 1);
+        else
+                getBasePath(packfile, filelist[dListCurrentPosition+dListScrollPosition].filename, 2);
+#else
 	getBasePath(packfile, filelist[dListCurrentPosition+dListScrollPosition].filename, 1);
+#endif
 	free(filelist);
 
 	// Restore screenformat and pixelformat to their default values

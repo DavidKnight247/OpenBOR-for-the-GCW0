@@ -2693,8 +2693,8 @@ void clearsettings()
     savedata.logo = 0;
     savedata.uselog = 1;
     savedata.debuginfo = 0;
-    savedata.fullscreen = 0;
-    savedata.stretch = 0;
+    savedata.fullscreen = 1;
+    savedata.stretch = 1;
 
 
 #ifdef SDL
@@ -8521,10 +8521,12 @@ s_model *load_cached_model(char *name, char *owner, char unload)
 
                 if((ani_id = translate_ani_id(value, newchar, newanim, &attack)) < 0)
                 {
+#ifdef GCW0 //testing, just a stupid idea, will certainly fail and end in tears :'( yup, I was right :(
+#else
                     shutdownmessage = "Invalid animation name!";
                     goto lCleanup;
+#endif
                 }
-
                 newchar->animation[ani_id] = newanim;
             }
             break;
@@ -23264,7 +23266,11 @@ int common_move()
                 {
                     aimove |= AIMOVE1_CHASEX | AIMOVE1_CHASEZ;
                 }
+#ifdef GCW0
+                if( (aimove & AIMOVE1_AVOID) || (aimove & AIMOVE2_AVOID) )
+#else
                 if(aimove & AIMOVE1_AVOID)
+#endif
                 {
                     aimove |= AIMOVE1_AVOIDX | AIMOVE1_AVOIDZ;
                 }
@@ -28230,6 +28236,23 @@ void apply_controls()
         control_setkey(playercontrolpointers[p], FLAG_START,      savedata.keys[p][SDID_START]);
         control_setkey(playercontrolpointers[p], FLAG_SCREENSHOT, savedata.keys[p][SDID_SCREENSHOT]);
     }
+#ifdef GCW0 //test
+    {
+        control_setkey(playercontrolpointers[0], FLAG_ESC,        CONTROL_ESC);
+        control_setkey(playercontrolpointers[0], FLAG_MOVEUP,     CONTROL_DEFAULT1_UP);
+        control_setkey(playercontrolpointers[0], FLAG_MOVEDOWN,   CONTROL_DEFAULT1_DOWN);
+        control_setkey(playercontrolpointers[0], FLAG_MOVELEFT,   CONTROL_DEFAULT1_LEFT);
+        control_setkey(playercontrolpointers[0], FLAG_MOVERIGHT,  CONTROL_DEFAULT1_RIGHT);
+        control_setkey(playercontrolpointers[0], FLAG_ATTACK,     CONTROL_DEFAULT1_FIRE1);
+        control_setkey(playercontrolpointers[0], FLAG_ATTACK2,    CONTROL_DEFAULT1_FIRE2);
+        control_setkey(playercontrolpointers[0], FLAG_ATTACK3,    CONTROL_DEFAULT1_FIRE3);
+        control_setkey(playercontrolpointers[0], FLAG_ATTACK4,    CONTROL_DEFAULT1_FIRE4);
+        control_setkey(playercontrolpointers[0], FLAG_JUMP,       CONTROL_DEFAULT1_FIRE5);
+        control_setkey(playercontrolpointers[0], FLAG_SPECIAL,    CONTROL_DEFAULT1_FIRE6);
+        control_setkey(playercontrolpointers[0], FLAG_START,      CONTROL_DEFAULT1_START);
+        control_setkey(playercontrolpointers[0], FLAG_SCREENSHOT, CONTROL_DEFAULT1_SCREENSHOT);
+    }
+#endif
 }
 
 
@@ -30350,6 +30373,9 @@ void init_videomodes(int log)
 #elif OPENDINGUX
     tryfile("data/videoopendingux.txt");
     tryfile("data/video43.txt");
+#ifdef GCW0
+    tryfile("data/video169.txt");
+#endif
 #elif SYMBIAN
     tryfile("data/videosymbian.txt");
 #endif
@@ -30462,7 +30488,9 @@ readfile:
     }
 
 #if OPENDINGUX || GP2X
-    videoMode = 0;
+#ifndef GCW0
+//    videoMode = 0;
+#endif
 #endif
 
 #if SYMBIAN
@@ -30563,6 +30591,18 @@ VIDEOMODES:
 
         // 960x540 - PC, Wii
     case 6:
+#ifdef GCW0
+        videomodes.hRes    = 960;
+        videomodes.vRes    = 480;
+        videomodes.hScale  = 3;
+        videomodes.vScale  = 2;
+        videomodes.hShift  = 320;
+        videomodes.vShift  = 35;
+        videomodes.dOffset = 522;
+        PLAYER_MIN_Z       = 321;
+        PLAYER_MAX_Z       = 465;
+        BGHEIGHT           = 321;
+#else
         videomodes.hRes    = 960;
         videomodes.vRes    = 540;
         videomodes.hScale  = 3;
@@ -30573,6 +30613,7 @@ VIDEOMODES:
         PLAYER_MIN_Z       = 362;
         PLAYER_MAX_Z       = 524;
         BGHEIGHT           = 362;
+#endif
         break;
 
     case 255:
@@ -30593,6 +30634,10 @@ VIDEOMODES:
 
 #if SDL || WII
     video_stretch(savedata.stretch);
+#endif
+
+#ifdef GCW0 //test
+    video_stretch(1);
 #endif
 
     if((vscreen = allocscreen(videomodes.hRes, videomodes.vRes, screenformat)) == NULL)
@@ -31636,8 +31681,13 @@ void video_options()
         _menutext((selector == 2), col2, -1, "%i", savedata.windowpos);
 
 #if OPENDINGUX
+#ifdef GCW0
+        _menutext((selector == 3), col1, 0, Tr("Display Mode:"));
+        _menutext((selector == 3), col2, 0, (savedata.stretch ? Tr("Stretch to Screen") : Tr("Preserve Aspect Ratio")));
+#else
         _menutext((selector == 3), col1, 0, Tr("Display Mode:"));
         _menutext((selector == 3), col2, 0, savedata.fullscreen ? Tr("Full") : Tr("Window"));
+#endif
         _menutextm((selector == 4), 6, 0, Tr("Back"));
         if(selector < 0)
         {
@@ -31833,7 +31883,11 @@ void video_options()
 #if SDL || PSP || WII
             case 3:
 #if OPENDINGUX
+#ifndef GCW0
                 video_fullscreen_flip();
+#else
+                video_stretch((savedata.stretch ^= 1));
+#endif
                 break;
 #endif
 
@@ -32333,6 +32387,8 @@ void openborMain(int argc, char **argv)
         }
         else
         {
+//gcw is this needed???
+//inputrefresh();
             _menutextm((selector == 0), 2, 0, Tr("Start Game"));
             _menutextm((selector == 1), 3, 0, Tr("Options"));
             _menutextm((selector == 2), 4, 0, Tr("How To Play"));
@@ -32346,7 +32402,6 @@ void openborMain(int argc, char **argv)
             {
                 selector = 0;
             }
-
             if(bothnewkeys)
             {
                 introtime = time + GAME_SPEED * 20;

@@ -25,6 +25,10 @@
 #include <assert.h>
 #ifndef SPK_SUPPORTED
 
+#ifdef GCW0
+#include "menu.h"
+#endif
+
 #include <fcntl.h>
 #include <stdio.h>
 #include <string.h>
@@ -1396,7 +1400,12 @@ void packfile_music_read(fileliststruct *filelist, int dListTotal)
     char pack[4], *p = NULL;
     for(i = 0; i < dListTotal; i++)
     {
+#ifdef GCW0 //SD card?
+char packfile2[128];
+        getBasePath(packfile2, filelist[i].filename, 2);
+#endif
         getBasePath(packfile, filelist[i].filename, 1);
+
         if(stristr(packfile, ".pak"))
         {
             memset(filelist[i].bgmTracks, 0, 256);
@@ -1425,7 +1434,11 @@ void packfile_music_read(fileliststruct *filelist, int dListTotal)
             while((len = fread(&pn, 1, sizeof(pn), fd)) > 12)
             {
                 p = strrchr(pn.namebuf, '.');
+#ifdef GCW0
+                if((p && (!stricmp(p, ".bor") || !stricmp(p, ".ogg"))) )
+#else
                 if((p && (!stricmp(p, ".bor") || !stricmp(p, ".ogg"))) || (stristr(pn.namebuf, "music")))
+#endif
                 {
                     if(!stristr(pn.namebuf, ".bor") && !stristr(pn.namebuf, ".ogg"))
                     {
@@ -1448,6 +1461,59 @@ nextpak:
 closepak:
             fclose(fd);
         }
+#ifdef GCW0
+        else if(stristr(packfile2, ".pak"))
+        {
+            memset(filelist[i].bgmTracks, 0, 256);
+            filelist[i].nTracks = 0;
+            fd = fopen(packfile2, "rb");
+            if(fd == NULL)
+            {
+                continue;
+            }
+            if(!fread(pack, 4, 1, fd))
+            {
+                goto closepak2;
+            }
+            if(fseek(fd, -4, SEEK_END) < 0)
+            {
+                goto closepak2;
+            }
+            if(!fread(&off, 4, 1, fd))
+            {
+                goto closepak2;
+            }
+            if(fseek(fd, off, SEEK_SET) < 0)
+            {
+                goto closepak2;
+            }
+            while((len = fread(&pn, 1, sizeof(pn), fd)) > 12)
+            {
+                p = strrchr(pn.namebuf, '.');
+                if((p && (!stricmp(p, ".bor") || !stricmp(p, ".ogg"))) )
+                {
+                    if(!stristr(pn.namebuf, ".bor") && !stristr(pn.namebuf, ".ogg"))
+                    {
+                        goto nextpak2;
+                    }
+                    if(filelist[i].nTracks < 256)
+                    {
+                        packfile_get_titlename(pn.namebuf, filelist[i].bgmFileName[filelist[i].nTracks]);
+                        filelist[i].bgmTracks[filelist[i].nTracks] = off;
+                        filelist[i].nTracks++;
+                    }
+                }
+nextpak2:
+                off += pn.pns_len;
+                if(fseek(fd, off, SEEK_SET) < 0)
+                {
+                    goto closepak2;
+                }
+            }
+closepak2:
+            fclose(fd);
+        }
+#endif
     }
 }
 
@@ -1457,7 +1523,14 @@ int packfile_music_play(struct fileliststruct *filelist, FILE *bgmFile, int bgmL
 {
     pnamestruct pn;
     int len;
+#ifdef GCW0
+    if(use_sdcard)
+        getBasePath(packfile, filelist[curPos + scrPos].filename, 2);
+    else
+        getBasePath(packfile, filelist[curPos + scrPos].filename, 1);
+#else
     getBasePath(packfile, filelist[curPos + scrPos].filename, 1);
+#endif
     if (bgmFile)
     {
         fclose(bgmFile);

@@ -282,22 +282,41 @@ function wii {
 function opendingux {
   export PATH=$OLD_PATH
   . ./environ.sh 8
-  if test $OPENDINGUX_TOOLCHAIN; then
     make clean BUILD_OPENDINGUX=1
     make BUILD_OPENDINGUX=1
-    if test -f "OpenBOR.dge"; then
-      if test ! -e "./releases/OPENDINGUX" ; then
-        mkdir ./releases/OPENDINGUX
-        mkdir ./releases/OPENDINGUX/OpenBOR
-        mkdir ./releases/OPENDINGUX/OpenBOR/Logs
-        mkdir ./releases/OPENDINGUX/OpenBOR/Paks
-        mkdir ./releases/OPENDINGUX/OpenBOR/Saves
-        mkdir ./releases/OPENDINGUX/OpenBOR/ScreenShots
-      fi
-      mv OpenBOR.dge ./releases/OPENDINGUX/OpenBOR/
-    fi
-    make clean BUILD_OPENDINGUX=1
-  fi
+# HACK FOR NOW
+#BUILD_GCW0=1
+
+#    if test $BUILD_GCW0; then
+                if test -f "OpenBOR"; then
+                  if test ! -e "./releases/OPENDINGUX" ; then
+                        mkdir ./releases/OPENDINGUX
+                        mkdir ./releases/OPENDINGUX/OpenBOR
+                  fi
+                  rm ./releases/OPENDINGUX/OpenBOR.opk
+                  mv OpenBOR ./releases/OPENDINGUX/OpenBOR/
+                  cp ./gcw0/default.gcw0.desktop ./releases/OPENDINGUX/OpenBOR/
+                  cp ./gcw0/openbor.png ./releases/OPENDINGUX/OpenBOR/
+                  cp ./gcw0/readme.gcw0.txt ./releases/OPENDINGUX/OpenBOR/
+                  mksquashfs ./releases/OPENDINGUX/OpenBOR/ ./releases/OPENDINGUX/OpenBOR.opk -all-root -noappend -no-exports -no-xattrs
+                fi    
+
+#  if test $OPENDINGUX_TOOLCHAIN; then
+#    make clean BUILD_OPENDINGUX=1
+#    make BUILD_OPENDINGUX=1
+#    if test -f "OpenBOR.dge"; then
+#      if test ! -e "./releases/OPENDINGUX" ; then
+#        mkdir ./releases/OPENDINGUX
+#        mkdir ./releases/OPENDINGUX/OpenBOR
+#        mkdir ./releases/OPENDINGUX/OpenBOR/Logs
+#        mkdir ./releases/OPENDINGUX/OpenBOR/Paks
+#        mkdir ./releases/OPENDINGUX/OpenBOR/Saves
+#        mkdir ./releases/OPENDINGUX/OpenBOR/ScreenShots
+#      fi
+#      mv OpenBOR.dge ./releases/OPENDINGUX/OpenBOR/
+#    fi
+#    make clean BUILD_OPENDINGUX=1
+#  fi
 }
 
 # WIZ Environment && Compile

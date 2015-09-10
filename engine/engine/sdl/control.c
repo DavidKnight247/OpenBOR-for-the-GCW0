@@ -14,7 +14,9 @@
 #include "sblaster.h"
 #include "joysticks.h"
 #include "openbor.h"
-
+#ifdef GCW0
+#include "gcw0.h"
+#endif
 
 SDL_Joystick *joystick[JOY_LIST_TOTAL]; // SDL struct for joysticks
 static int usejoy;						// To be or Not to be used?
@@ -39,6 +41,9 @@ Here is where we aquiring all joystick events
 and map them to BOR's layout.  Currently support
 up to 4 controllers.
 */
+#ifdef GCW0
+int gcw_keyheld;
+#endif
 void getPads(Uint8* keystate)
 {
 	int i, j, x, axis;
@@ -48,6 +53,9 @@ void getPads(Uint8* keystate)
 		switch(ev.type)
 		{
 			case SDL_KEYDOWN:
+#ifdef GCW0
+				gcw_keyheld = 1;
+#endif
 #ifdef SDL2
 				lastkey = ev.key.keysym.scancode;
 				if((keystate[SDL_SCANCODE_LALT] || keystate[SDL_SCANCODE_RALT]) && (lastkey == SDL_SCANCODE_RETURN))
@@ -64,6 +72,11 @@ void getPads(Uint8* keystate)
 					keystate[SDLK_RETURN] = 0;
 				}
 				if(lastkey != SDLK_F10) break;
+#endif
+#ifdef GCW0
+			case SDL_KEYUP:
+				gcw_keyheld = 0;
+				break;
 #endif
 #ifdef ANDROID
 			case SDL_FINGERDOWN:
@@ -332,6 +345,7 @@ void control_init(int joy_enable)
 #else
 	usejoy = joy_enable;
 #endif
+
 	memset(joysticks, 0, sizeof(s_joysticks) * JOY_LIST_TOTAL);
 	for(i=0, k=0; i<JOY_LIST_TOTAL; i++, k+=JOY_MAX_INPUTS)
 	{

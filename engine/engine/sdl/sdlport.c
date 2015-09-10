@@ -32,10 +32,17 @@ char packfile[128] = {"bor.pak"};
 #include <unistd.h>
 char rootDir[128] = {"/mnt/sdcard/OpenBOR"};
 #endif
+#if GCW0
+char paksDir[128] = {"/usr/local/share/OpenBOR/Paks"};
+char savesDir[128] = {"/usr/local/home/.OpenBOR/Saves"};
+char logsDir[128] = {"/usr/local/home/.OpenBOR/Logs"};
+char screenShotsDir[128] = {"/usr/local/home/.OpenBOR/ScreenShots"};
+#else
 char paksDir[128] = {"Paks"};
 char savesDir[128] = {"Saves"};
 char logsDir[128] = {"Logs"};
 char screenShotsDir[128] = {"ScreenShots"};
+#endif
 
 // sleeps for the given number of microseconds
 #if _POSIX_C_SOURCE >= 199309L

@@ -17,7 +17,8 @@ char *stristr(const char *String, const char *Pattern)
     for(start = (char *)String, pptr = (char *)Pattern, slen = strlen(String), plen = strlen(Pattern); slen >= plen; start++, slen--)
     {
         /* find start of pattern in string */
-        while(toupper((int)*start) != toupper((int)*Pattern))
+//gcw0 test        while(toupper((int)*start) != toupper((int)*Pattern))
+        while(tolower((int)*start) != tolower((int)*Pattern))
         {
             start++;
             slen--;
@@ -29,7 +30,8 @@ char *stristr(const char *String, const char *Pattern)
         }
         sptr = start;
         pptr = (char *)Pattern;
-        while(toupper((int)*sptr) == toupper((int)*pptr))
+//        while(toupper((int)*sptr) == toupper((int)*pptr))
+        while(tolower((int)*sptr) == tolower((int)*pptr))
         {
             sptr++;
             pptr++;

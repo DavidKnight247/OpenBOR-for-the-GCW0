@@ -18,6 +18,9 @@
 
 /////////////////////////////////////////////////////////////////////////////
 
+#ifdef GCW0 //is this still required?
+#include "menu.h"
+#endif
 #include	"types.h"
 #include	"video.h"
 #include	"vga.h"
@@ -238,6 +241,9 @@ typedef enum
     */
 
     AIMOVE2_NORMAL,                         // Current default style
+#ifdef GCW0
+    AIMOVE2_AVOID,      
+#endif
     AIMOVE2_IGNOREHOLES     = 0x00010000,   // don't avoid holes
     AIMOVE2_NOTARGETIDLE    = 0x00020000,   // don't move when there's no target
     MASK_AIMOVE2            = 0xFFFF0000
@@ -467,7 +473,12 @@ typedef enum
     2013-12-27
     */
 
+#ifdef GCW0
     ATK_NORMAL,
+ ATK_ATTACK1 = ATK_NORMAL,
+#else
+    ATK_NORMAL,
+#endif
     ATK_NORMAL1			= ATK_NORMAL,
     ATK_NORMAL2,
     ATK_NORMAL3,

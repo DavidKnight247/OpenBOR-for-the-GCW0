@@ -11,5 +11,10 @@
 
 void Menu();
 
+#ifdef GCW0
+extern char sdcard_dir[128];
+extern int use_sdcard;
+#endif
+
 #endif
 
