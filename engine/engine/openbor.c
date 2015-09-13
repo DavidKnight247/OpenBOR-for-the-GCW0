@@ -43,6 +43,9 @@ int		skiptoset = -1;
 int spawnoverride = 999999;
 int maxentities = 999999;
 
+#ifdef GCW0 //work around for "Sailor Moon R"
+static int gcw_sailormoon_r = 0;
+#endif
 int	global_model = -1;
 #define global_model_scripts ((global_model>=0 && model_cache[global_model].model)?model_cache[global_model].model->scripts:NULL)
 
@@ -10753,7 +10756,13 @@ void load_levelorder()
 
     if(buffer_pakfile(filename, &buf, &size) != 1)
     {
+#ifdef GCW0 //causes error with SailorMoon R.pak
+        strcpy(filename, "data/levels.txt");
+	if(buffer_pakfile(filename, &buf, &size) != 1)
+            shutdown(1, "Error loading level list from %s", filename);
+#else
         shutdown(1, "Error loading level list from %s", filename);
+#endif
     }
 
     // Now interpret the contents of buf line by line
@@ -23262,7 +23271,11 @@ int common_move()
                     aimove |= AIMOVE1_CHASE;
                 }
 
+#ifdef GCW0
+                if( (aimove & AIMOVE1_CHASE) || (aimove & AIMOVE2_CHASE) )
+#else
                 if(aimove & AIMOVE1_CHASE)
+#endif
                 {
                     aimove |= AIMOVE1_CHASEX | AIMOVE1_CHASEZ;
                 }
@@ -28266,8 +28279,13 @@ void display_credits()
     int s = videomodes.vShift / 2 + 3;
     int v = (videomodes.vRes - videomodes.vShift) / 23;
     int h = videomodes.hRes / 2;
+#ifdef GCW0
+    int col1 = h - fontmonowidth(0) * 14;
+    int col2 = h + fontmonowidth(0);
+#else
     int col1 = h - fontmonowidth(0) * 16;
     int col2 = h + fontmonowidth(0) * 4;
+#endif
 
     if(savedata.logo != 1)
     {
@@ -28302,7 +28320,7 @@ void display_credits()
         font_printf(col1,  s + v * 13, 0, 0, "PSP/Linux/OSX");
         font_printf(col2, s + v * 13, 0, 0, "SX");
         font_printf(col1,  s + v * 14, 0, 0, "OpenDingux");
-        font_printf(col2, s + v * 14, 0, 0, "Shin-NiL");
+        font_printf(col2, s + v * 14, 0, 0, "Shin-NiL & David Knight");
         font_printf(col1,  s + v * 15, 0, 0, "Windows");
         font_printf(col2, s + v * 15, 0, 0, "SX & Nazo");
         font_printf(col1,  s + v * 16, 0, 0, "GamePark");
@@ -30412,22 +30430,43 @@ readfile:
                 }
                 else
                 {
+		if (gcw_sailormoon_r)
+                    videoMode = 1;
+		else
                     videoMode = GET_INT_ARG(1);
                 }
             }
             else if(stricmp(command, "scenes") == 0)
             {
-                len = strlen(GET_ARG(1));
-                custScenes = malloc(len + 1);
-                strcpy(custScenes, GET_ARG(1));
-                custScenes[len] = 0;
+		if (gcw_sailormoon_r)
+		{
+               		len = strlen("data/scenes/");
+                	custScenes = malloc(len + 1);
+        	        strcpy(custScenes, "data/scenes/");
+	                custScenes[len] = 0;
+		} else
+		{
+               		len = strlen(GET_ARG(1));
+                	custScenes = malloc(len + 1);
+        	        strcpy(custScenes, GET_ARG(1));
+	                custScenes[len] = 0;
+		}
             }
             else if(stricmp(command, "backgrounds") == 0)
             {
-                len = strlen(GET_ARG(1));
-                custBkgrds = malloc(len + 1);
-                strcpy(custBkgrds, GET_ARG(1));
-                custBkgrds[len] = 0;
+		if (gcw_sailormoon_r)
+		{
+              		len = strlen("data/bgs/");
+                	custBkgrds = malloc(len + 1);
+        	        strcpy(custBkgrds, "data/bgs/");
+	                custBkgrds[len] = 0;
+		} else
+		{
+              		len = strlen(GET_ARG(1));
+                	custBkgrds = malloc(len + 1);
+        	        strcpy(custBkgrds, GET_ARG(1));
+	                custBkgrds[len] = 0;
+		}
             }
             else if(stricmp(command, "levels") == 0)
             {
@@ -32295,6 +32334,9 @@ void openborMain(int argc, char **argv)
 
     // Load necessary components.
     printf("Game Selected: %s\n\n", packfile);
+#ifdef GCW0 //catch bug in "Sailor Moon R.pak"
+    if(strstr(packfile, "Sailor Moon R")) gcw_sailormoon_r = 1;
+#endif
     loadsettings();
     startup();
 

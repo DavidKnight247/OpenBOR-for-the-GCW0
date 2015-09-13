@@ -5,10 +5,6 @@
  *
  * Copyright (c) 2004 - 2014 OpenBOR Team
  */
-#ifdef GCW0
-#include "gcw0.h"
-#endif
-
 #include <unistd.h>
 #include "SDL.h"
 #include "sdlport.h"
@@ -22,6 +18,13 @@
 #include "stringptr.h"
 
 #include "pngdec.h"
+
+#ifdef GCW0
+#include "gcw0.h"
+#include "../resources/OpenBOR_Menu_320x240_GCW0_png.h"
+#include "../resources/OpenBOR_Logo_320x240_gcw0_4_png.h"
+#endif
+
 #include "../resources/OpenBOR_Logo_480x272_png.h"
 #include "../resources/OpenBOR_Logo_320x240_png.h"
 #include "../resources/OpenBOR_Menu_480x272_png.h"
@@ -53,7 +56,8 @@ s_screen* logscreen;
 #define PURPLE		RGB(255,   0, 255)
 #define ORANGE		RGB(255, 128,   0)
 #define GRAY		RGB(112, 128, 144)
-#define LIGHT_GRAY  RGB(223, 223, 223)
+#define LIGHT_BLUE      RGB(  0, 127, 255)
+#define LIGHT_GRAY      RGB(223, 223, 223)
 #define DARK_RED	RGB(128,   0,   0)
 #define DARK_GREEN	RGB(  0, 128,   0)
 #define DARK_BLUE	RGB(  0,   0, 128)
@@ -409,8 +413,13 @@ int ControlMenu()
 #ifdef GCW0 //wrap to bottom of list
 			if(dListCurrentPosition < 0) 
 			{
-				dListScrollPosition = dListTotal - dListMaxDisplay - 1;
-				dListCurrentPosition = dListMaxDisplay;
+				if(dListTotal > dListMaxDisplay) //more entries than one screen
+				{
+					dListScrollPosition = dListTotal - dListMaxDisplay - 1;
+					dListCurrentPosition = dListMaxDisplay;
+				}
+				else
+					dListCurrentPosition = dListTotal - 1;
 			}
 #else
 			if(dListCurrentPosition < 0) dListCurrentPosition = 0;
@@ -422,7 +431,8 @@ int ControlMenu()
 			gcw_left = gcw_right = 0;
 #endif
 			dListCurrentPosition++;
-			if(dListCurrentPosition > dListTotal - 1) dListCurrentPosition = dListTotal - 1;
+			if(dListTotal - 1 < dListMaxDisplay && dListCurrentPosition > dListTotal - 1)	dListCurrentPosition = 0;
+			if(dListCurrentPosition > dListTotal - 1)	dListCurrentPosition = dListTotal - 1;
 			if(dListCurrentPosition > dListMaxDisplay)
 		        {
 			        if((dListCurrentPosition+dListScrollPosition) < dListTotal) dListScrollPosition++;
@@ -437,9 +447,12 @@ int ControlMenu()
 #ifdef GCW0
 		case FLAG_ATTACK3: //GCW0 R, move down one screen
 			gcw_left = gcw_right = 0;
-			if(dListScrollPosition >= dListTotal - dListMaxDisplay - 1)	dListCurrentPosition = dListMaxDisplay;
-			dListScrollPosition += 17;
-			if(dListScrollPosition > dListTotal - 18) 			dListScrollPosition = dListTotal - 18;
+			if(dListTotal - 1 > dListMaxDisplay)
+			{
+				if(dListScrollPosition >= dListTotal - dListMaxDisplay - 1)	dListCurrentPosition = dListMaxDisplay;
+				dListScrollPosition += 17;
+				if(dListScrollPosition > dListTotal - 18) 			dListScrollPosition = dListTotal - 18;
+			} else	dListCurrentPosition = dListTotal - 1;
 			break;
 		case FLAG_ATTACK4: //GCW0 L, move up one screen
 			gcw_left = gcw_right = 0;
@@ -511,10 +524,13 @@ int ControlMenu()
 				}
 				if(dListCurrentPosition < 0) 
 				{
-					dListScrollPosition  = dListTotal - dListMaxDisplay - 1;
-					dListCurrentPosition = dListMaxDisplay;
+					if(dListTotal - 1 > dListMaxDisplay)
+					{
+						dListScrollPosition  = dListTotal - dListMaxDisplay - 1;
+						dListCurrentPosition = dListMaxDisplay;
+					} else
+						dListCurrentPosition = 0;
 				}
-				gcw_pause = 0;
 				break;
 			}
 			else if (gcw_keyheld && gcw_right)
@@ -526,7 +542,6 @@ int ControlMenu()
 			        	if((dListCurrentPosition+dListScrollPosition) < dListTotal) dListScrollPosition++;
 					else 				dListScrollPosition  = dListCurrentPosition = 0;
 					if(dListCurrentPosition)	dListCurrentPosition = dListMaxDisplay;
-					gcw_pause = 0;
 				}
 				break;
 			}
@@ -646,9 +661,17 @@ void initMenu(int type)
 
 	// Read Logo or Menu from Array.
 	if(!type)
+#ifdef GCW0
+		bgscreen = pngToScreen(isWide ? (void*) openbor_logo_480x272_png.data : (void*) openbor_logo_320x240_gcw0_4_png.data);
+#else
 		bgscreen = pngToScreen(isWide ? (void*) openbor_logo_480x272_png.data : (void*) openbor_logo_320x240_png.data);
+#endif
 	else
+#ifdef GCW0
+		bgscreen = pngToScreen(isWide ? (void*) openbor_menu_480x272_png.data : (void*) openbor_menu_320x240_gcw0_png.data);
+#else
 		bgscreen = pngToScreen(isWide ? (void*) openbor_menu_480x272_png.data : (void*) openbor_menu_320x240_png.data);
+#endif
 	// CRxTRDude - Initialize log screen images		
 	logscreen = pngToScreen(isWide ? (void*) logviewer_480x272_png.data : (void*) logviewer_320x240_png.data);
 
@@ -679,7 +702,22 @@ void drawMenu()
 	s_screen* Image = NULL;
 
 	putscreen(vscreen,bgscreen,0,0,NULL);
+#ifdef GCW0
+	if(dListTotal < 1)
+	{
+		printText((isWide ? 30 : 8), (isWide ?  33 :  24), RED,      0, 0, "No Mods In Paks Folder!");
+		printText((isWide ? 30 : 8), (isWide ?  55 :  45), DARK_RED, 0, 0, "Put .pak files in either");
+		printText((isWide ? 30 : 8), (isWide ?  65 :  55), ORANGE,   0, 0, "\"/data/local/share/");
+		printText((isWide ? 30 : 8), (isWide ?  75 :  65), ORANGE,   0, 0, "      OpenBOR/Paks\"");
+		printText((isWide ? 30 : 8), (isWide ?  85 :  75), DARK_RED, 0, 0, "or");
+		printText((isWide ? 30 : 8), (isWide ?  95 :  85), ORANGE,   0, 0, "\"/media/SDCARD_DIR/");
+		printText((isWide ? 30 : 8), (isWide ? 105 :  95), ORANGE,   0, 0, "      OpenBOR/Paks\"");
+		printText((isWide ? 30 : 8), (isWide ? 115 : 105), DARK_RED, 0, 0, "folders.");
+		printText((isWide ? 30 : 8), (isWide ? 125 : 115), DARK_RED, 0, 0, "(case sensitive)");
+	}
+#else
 	if(dListTotal < 1) printText((isWide ? 30 : 8), (isWide ? 33 : 24), RED, 0, 0, "No Mods In Paks Folder!");
+#endif
 	for(list=0; list<dListTotal; list++)
 	{
 		if(list<18)
@@ -702,7 +740,11 @@ void drawMenu()
 		}
 	}
 
+#ifdef GCW0
+	printText((isWide ? 26 : 5), (isWide ? 11 : 4), WHITE, 0, 0, "OpenBoR %s4165 - Ported by David Knight", VERSION);
+#else
 	printText((isWide ? 26 : 5), (isWide ? 11 : 4), WHITE, 0, 0, "OpenBoR %s", VERSION);
+#endif
 	printText((isWide ? 392 : 261),(isWide ? 11 : 4), WHITE, 0, 0, __DATE__);
 		//CRxTRDude - Fix for Android's text - Main menu 
 #ifdef ANDROID
@@ -730,7 +772,11 @@ void drawMenu()
 		freescreen(&Image);
 	}
 	else
+#ifdef GCW0
+		printText((isWide ? 288 : 157), (isWide ? 141 : 130), LIGHT_BLUE, 0, 0, "No Preview Available!");
+#else
 		printText((isWide ? 288 : 157), (isWide ? 141 : 130), RED, 0, 0, "No Preview Available!");
+#endif
 
 	video_copy_screen(vscreen);
 }

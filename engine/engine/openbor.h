@@ -243,6 +243,7 @@ typedef enum
     AIMOVE2_NORMAL,                         // Current default style
 #ifdef GCW0
     AIMOVE2_AVOID,      
+    AIMOVE2_CHASE, 
 #endif
     AIMOVE2_IGNOREHOLES     = 0x00010000,   // don't avoid holes
     AIMOVE2_NOTARGETIDLE    = 0x00020000,   // don't move when there's no target

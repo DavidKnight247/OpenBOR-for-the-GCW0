@@ -1210,7 +1210,10 @@ int Script_Execute(Script *pscript)
     pcurrentscript = temp;
     if(!result)
     {
+#ifdef GCW0 //ignore error for now
+#else
         shutdown(1, "There's an exception while executing script '%s' %s", pscript->pinterpreter->theSymbolTable.name, pscript->comment ? pscript->comment : "");
+#endif
     }
     return result;
 }
@@ -10641,6 +10644,7 @@ int mapstrings_transconst(ScriptVariant **varlist, int paramCount)
         ICMPCONST(AIMOVE2_NORMAL)
 #ifdef GCW0
         ICMPCONST(AIMOVE2_AVOID)
+        ICMPCONST(AIMOVE2_CHASE)
 #endif
         ICMPCONST(AIMOVE2_IGNOREHOLES)
         ICMPCONST(AIATTACK1_NORMAL)
